@@ -1,0 +1,32 @@
+{
+  "version": "1.0",
+  "defaultProvider": "unpkg",
+  "libraries": [
+    {
+      "library": "@microsoft/signalr@latest",
+      "destination": "wwwroot/js/signalr",
+      "files": [
+        "dist/browser/signalr.js",
+        "dist/browser/signalr.min.js"
+      ]
+    },
+    {
+      "library": "signalr-asp-net@1.0.3",
+      "destination": "wwwroot/js/signalr-asp-net/"
+    },
+    {
+      "provider": "cdnjs",
+      "library": "signalr.js@2.4.3",
+      "destination": "wwwroot/js/signalr.js/"
+    },
+    {
+      "provider": "cdnjs",
+      "library": "microsoft-signalr@7.0.9",
+      "destination": "wwwroot/js/microsoft-signalr/",
+      "files": [
+        "signalr.min.js",
+        "signalr.js"
+      ]
+    }
+  ]
+}

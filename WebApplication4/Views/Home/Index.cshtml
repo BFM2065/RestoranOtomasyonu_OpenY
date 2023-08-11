@@ -1,0 +1,96 @@
+﻿@{
+    ViewData["Title"] = "Home Page";
+}
+
+<!-- Sipariş Ver Formu HTML -->
+<!-- Buton tıklaması ile sipariş veriliyor diyelim -->
+<button id="btnPlaceOrder">Sipariş Ver</button>
+<head>
+
+    <script src="~/lib/jquery/dist/jquery.js"></script>
+    <script src="~/lib/microsoft/signalr/dist/browser/signalr.js"></script>
+
+
+    <script>
+        function connectionMessageWrite(state, message) {
+            $("#connectionMessage").find("div")[1].removeAttribute("class");
+            $("#connectionMessage").find("div")[1].setAttribute("class", "alert alert-" + state);
+            $("#connectionMessage").find("div")[1].innerHTML = message;
+            $("#connectionMessage").show(2000);
+        }
+        var connection = new signalR.HubConnectionBuilder()
+            .withUrl("/mmHub",
+                { accessTokenFactory: () => localStorage.getItem("accessToken") != null ? localStorage.getItem("accessToken") : "" })
+            .withAutomaticReconnect([10])
+            .configureLogging(signalR.LogLevel.Information)
+            .build();
+
+        function start() {
+            connection.start()
+                .then(() => connectionMessageWrite("success", "Bağlantı başarılı."))
+                .catch(err => connectionMessageWrite("danger", "Bağlantı başarısız! Lütfen oturum açınız."));
+        }
+        start();
+        $(document).ready(() => {
+            $("#logOut").click(() => {
+                localStorage.removeItem("accessToken");
+                localStorage.removeItem("refreshToken");
+            });
+
+           
+        });
+
+            document.getElementById("btnPlaceOrder").addEventListener("click", function () {
+                // Sipariş verme işlemi gerçekleştiğinde buradan hub'a bildirim gönderelim
+                var message = "Yeni bir sipariş verildi!";
+                connection.invoke("SendOrderNotification", message).catch(function (err) {
+                    return console.error(err.toString());
+                });
+            });
+
+            // Sipariş al formunda bildirimi yakalayıp gerekli işlemleri yapabiliriz
+            connection.on("ReceiveOrderNotification", function (message) {
+
+                alert(message); // Sipariş al formunda sipariş bildirimini göstermek için burada istediğiniz görsel veya bildirim işlemlerini yapabilirsiniz.
+            });
+
+            connection.on("clients", function (message) {
+
+                alert(message); // Sipariş al formunda sipariş bildirimini göstermek için burada istediğiniz görsel veya bildirim işlemlerini yapabilirsiniz.
+            });
+        
+
+        connection.onclose(() => $("#connectionMessage").hide(2000, () => {
+            const login = new signalR.HubConnectionBuilder()
+                .withUrl("/login")
+                .build();
+            connectionMessageWrite("warning", "Bağlantı koptu!");
+            login.start().then(() => {
+                login.invoke("RefreshTokenLogin", localStorage.getItem("refreshToken"));
+                login.on("login", token => {
+                    localStorage.setItem("accessToken", token.accessToken);
+                    localStorage.setItem("refreshToken", token.refreshToken);
+                    message.connection.accessTokenFactory = token.accessToken;
+                    start();
+                });
+            });
+        }));
+    </script>
+</head>
+<body>
+    <ul class="nav">
+        <li class="nav-item">
+            <a class="nav-link active" href="/Home/Create">Create User</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/Home/Login">Login</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" href="/Home/Index">Sipariş Ekranı</a>
+        </li>
+        <li class="nav-item">
+            <a class="nav-link" style="cursor: pointer;" id="logOut">Logout</a>
+        </li>
+    </ul>
+    <div class="row" id="connectionMessage" style="display: none;">
+</body>
